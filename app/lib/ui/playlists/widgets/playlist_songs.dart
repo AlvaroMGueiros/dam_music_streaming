@@ -1,8 +1,14 @@
+import 'dart:io';
+
+import 'package:dam_music_streaming/data/services/playlist_service.dart';
+import 'package:dam_music_streaming/ui/core/ui/info_tile.dart';
 import 'package:dam_music_streaming/ui/core/ui/svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../domain/models/playlist_data.dart';
 import '../view_model/playlist_view_model.dart';
+import "package:path/path.dart";
 
 class PlaylistSongs extends StatelessWidget {
   const PlaylistSongs({super.key});
@@ -21,9 +27,8 @@ class PlaylistSongs extends StatelessWidget {
           appBar: AppBar(
             elevation: 0,
             backgroundColor: theme.scaffoldBackgroundColor,
-
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, color: theme.iconTheme.color, size: 25,),
+              icon: Icon(Icons.arrow_back, color: theme.iconTheme.color, size: 25,),
               onPressed: () {
                 vm.setStackIndex(0);
               },
@@ -33,33 +38,32 @@ class PlaylistSongs extends StatelessWidget {
                 icon: SvgIcon(
                     assetName: 'assets/icons/Trash.svg',
                     color: theme.colorScheme.error,
-                    size: 35),
-                onPressed: () {
-                  vm.setStackIndex(0);
-                },
+                    size: 35
+                ),
+                onPressed: () => _deletePlaylist(context, playlist!, vm)
               ),
             ],
           ),
           body: playlist == null
               ? const Center(child: Text('Nenhuma playlist selecionada.'))
-              :SingleChildScrollView(
-            padding: EdgeInsets.all(16.0),
+              : SingleChildScrollView(
+            padding: EdgeInsets.all(6.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 10),
-                Text(playlist.title,
+                SizedBox(height: 30),
+                Text(playlist.title ?? '',
                   style: TextStyle(
                     color: theme.colorScheme.onSurface,
-                    fontSize: 28,
+                    fontSize: 35,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                Text(playlist.description,
+                Text(playlist.description ?? '',
                   style: TextStyle(
                     color: theme.dividerColor,
                     fontSize: 20,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 SizedBox(height: 30),
@@ -74,26 +78,18 @@ class PlaylistSongs extends StatelessWidget {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          '${playlist.numSongs} de duração',
+                          '${playlist.duration} de duração',
                           style: TextStyle(color: Colors.grey, fontSize: 12),
                         ),
                       ],
                     ),
                     Spacer(),
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient( //TODO: achar uma cor legal para variar
-                          colors: [theme.colorScheme.primary, theme.colorScheme.primary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: FloatingActionButton(
-                        child: const Icon(Icons.play_arrow, size: 30),
-                        onPressed: () {},
-                      )
-                    ),
+                    FloatingActionButton(
+                      shape: CircleBorder(),
+                      child: const Icon(Icons.play_arrow, size: 30),
+                      onPressed: () {},
+                    )
+
                   ],
                 ),
                 SizedBox(height: 30),
@@ -101,35 +97,20 @@ class PlaylistSongs extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
 
-                  itemCount: playlist.songs.length,
+                  itemCount: playlist.songs?.length ?? 0,
                   itemBuilder: (context, index) {
-                    final song = playlist.songs[index];
+                    final song = playlist.songs?[index];
                     return Card(
                       color: theme.cardColor,
-                      child: ListTile(
-                        leading: Image.network(
-                          song.coverUrl,
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const SizedBox(
-                              width: 50,
-                              height: 50,
-                              child: Icon(Icons.error_outline, color: Colors.red),
-                            );
+                      child: InfoTile(
+                          imageUrl: song?.coverUrl ?? '',
+                          title: song?.title ?? '',
+                          subtitle: song?.artist ?? '',
+                          trailing: const Icon(Icons.more_vert, size: 20,),
+                          onTap: () async {
+                            vm.setStackIndex(2);
                           },
-                        ),
-                        title: Text(song.title),
-                        subtitle: Text(
-                          song.artist,
-                          style: const TextStyle(color: Color(0xFFB7B0B0)),
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 20,),
-                        onTap: () async {
-                          vm.setStackIndex(2);
-                        },
-                      ),
+                      )
                     );
                   },
                 ),
@@ -138,6 +119,17 @@ class PlaylistSongs extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _deletePlaylist(BuildContext context, PlaylistData playlist, PlaylistViewModel vm) async {
+    await vm.deletePlaylist(playlist.id!);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 2),
+        content: Text("Contact deleted"),
+      ),
     );
   }
 }

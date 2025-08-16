@@ -5,11 +5,14 @@ import "package:flutter/material.dart";
 import "package:image_picker/image_picker.dart";
 import "package:provider/provider.dart";
 
+import "../../core/ui/image_edit.dart";
 import "../view_model/playlist_view_model.dart";
 
 class PlaylistEntryView extends StatelessWidget{
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
@@ -20,14 +23,13 @@ class PlaylistEntryView extends StatelessWidget{
     return Consumer<PlaylistViewModel>(
       builder: (context, vm, child) {
         if (vm.entityBeingEdited != null) {
-          _nameController.text = vm.entityBeingEdited!.title;
-          _descController.text = vm.entityBeingEdited!.author;
+          _nameController.text = vm.entityBeingEdited!.title ?? '';
+          _descController.text = vm.entityBeingEdited!.description ?? '';
         }
-
         File coverPlaylistFile = File(join(vm.docsDir.path, "playlist_cover")); //vamos salvar localmente e colocar e mapear com banco
 
         if (!coverPlaylistFile.existsSync() && vm.entityBeingEdited?.id != null) {
-          coverPlaylistFile = File(join(vm.docsDir.path, vm.entityBeingEdited!.id.toString()));
+          coverPlaylistFile = File(join(vm.docsDir.path, vm.entityBeingEdited!.id));
         }
 
         return Scaffold(
@@ -58,10 +60,10 @@ class PlaylistEntryView extends StatelessWidget{
                 children: [
                   Text("Criar playlist"),
                   SizedBox(width: 8),
-                  Icon(Icons.arrow_right),
+                  Icon(Icons.arrow_forward_ios_outlined, size: 25,),
                 ],
               ),
-              onPressed: () {},
+              onPressed: () => _save(context, vm),
             ),
           ),
           body: Form(
@@ -79,36 +81,9 @@ class PlaylistEntryView extends StatelessWidget{
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Stack(
-                            children: [
-                              CircleAvatar(
-                                radius: 80,
-                                backgroundColor: Colors.grey.shade300,
-                                backgroundImage: coverPlaylistFile.existsSync() ? FileImage(coverPlaylistFile) : null,
-                                child: coverPlaylistFile.existsSync()
-                                    ? null
-                                    : Icon(
-                                  Icons.music_note,
-                                  size: 50,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: GestureDetector(
-                                  onTap: () => _selectCoverPlaylist(context, vm),
-                                  child: CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: theme.colorScheme.primary,
-                                    child: Icon(
-                                      Icons.edit,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          ImageRoundEdit(
+                            coverPlaylistFile: coverPlaylistFile,
+                            onTap: () => _selectCoverPlaylist(context, vm),
                           ),
                           const SizedBox(height: 32),
                           CustomInputField(
@@ -121,12 +96,15 @@ class PlaylistEntryView extends StatelessWidget{
                               }
                               return null;
                             },
+                            onChanged: (v) => vm.entityBeingEdited!.title = v,
                           ),
                           const SizedBox(height: 20),
                           CustomInputField(
                             controller: _descController,
                             hintText: 'Descrição',
                             iconData: Icons.description,
+                            onChanged: (v) => vm.entityBeingEdited!.description = v,
+
                           ),
                         ],
                       ),
@@ -170,7 +148,7 @@ class PlaylistEntryView extends StatelessWidget{
                     if (image != null) {
                       final file = File(image.path);
                       final dir = vm.docsDir;
-                      await file.copy(join(dir.path, "avatar"));
+                      await file.copy(join(dir.path, "playlist_cover"));
                       vm.triggerRebuild();
                     }
                     Navigator.of(ctx).pop();
@@ -184,4 +162,20 @@ class PlaylistEntryView extends StatelessWidget{
     );
   }
 
+  void _save(BuildContext context, PlaylistViewModel vm) async {
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+    await vm.savePlaylist();
+
+    _nameController.clear();
+    _descController.clear();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+        content: Text("Playlist criada"),
+      ),
+    );
+  }
 }

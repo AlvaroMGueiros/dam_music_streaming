@@ -3,6 +3,7 @@ import 'package:dam_music_streaming/ui/core/ui/svg_icon.dart';
 import "package:flutter/material.dart";
 import "package:path_provider/path_provider.dart";
 import 'dart:io';
+import 'ui/core/themes/light.dart';
 import 'ui/playlists/widgets/playlists_view.dart';
 import 'ui/login/login_inicio.dart';
 import 'ui/login/cadastro_page.dart';
@@ -62,7 +63,7 @@ class HomeScaffold extends StatelessWidget {
             const Center(child: Text("Home")),
             const Center(child: Text("Search")),
             const Center(child: Text("Tocando")),
-            Playlist(docsDir: docsDir),
+            PlaylistsView(docsDir: _docsDir),
           ],
         ),
         bottomNavigationBar: const TabBar(

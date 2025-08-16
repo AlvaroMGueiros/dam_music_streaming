@@ -6,6 +6,8 @@ class CustomInputField extends StatelessWidget {
   final String hintText;
   final IconData iconData;
   final String? Function(String?)? validator;
+  final void Function(String?)? onChanged;
+  final void Function(String?)? onSaved;
 
   const CustomInputField({
     super.key,
@@ -13,19 +15,21 @@ class CustomInputField extends StatelessWidget {
     required this.hintText,
     required this.iconData,
     this.validator,
+    this.onChanged,
+    this.onSaved
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: theme.colorScheme.surface,
           border: Border.all(color: theme.dividerColor)),
       child: Row(
-        children: <Widget>[
+        children: [
           Expanded(
             child: TextFormField(
               controller: controller,
@@ -34,9 +38,11 @@ class CustomInputField extends StatelessWidget {
                 hintStyle: TextStyle(color: Colors.grey[600]),
               ),
               validator: validator,
+              onChanged: onChanged,
+              onSaved: onSaved,
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Icon(
             iconData,
             color: Colors.grey,
